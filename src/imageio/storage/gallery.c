@@ -189,6 +189,7 @@ static void title_changed_callback(GtkEntry *entry,
 void gui_init(dt_imageio_module_storage_t *self)
 {
   gallery_t *d = malloc(sizeof(gallery_t));
+  if(!d) return;
   self->gui_data = (void *)d;
 
   d->entry =
@@ -329,10 +330,16 @@ int store(dt_imageio_module_storage_t *self,
     ;
   if(c <= filename || *c == '/' || *c == G_DIR_SEPARATOR) c = filename + strlen(filename);
 
-  sprintf(c, ".%s", ext);
+  snprintf(c, PATH_MAX - (c - filename), ".%s", ext);
 
   // save image to list, in order:
   pair_t *pair = malloc(sizeof(pair_t));
+  if(!pair)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[imageio_storage_gallery] memory allocation failed!");
+    dt_control_log(_("memory allocation failed!"));
+    return 1;
+  }
 
   char *title = NULL, *description = NULL;
   GList *res_title = NULL, *res_desc = NULL;
@@ -366,12 +373,12 @@ int store(dt_imageio_module_storage_t *self,
   for(; c > relthumbfilename && *c != '.'; c--)
     ;
   if(c <= relthumbfilename) c = relthumbfilename + strlen(relthumbfilename);
-  sprintf(c, "-thumb.%s", ext);
+  snprintf(c, PATH_MAX - (c - relthumbfilename), "-thumb.%s", ext);
 
   char subfilename[PATH_MAX] = { 0 }, relsubfilename[PATH_MAX] = { 0 };
   g_strlcpy(subfilename, d->cached_dirname, sizeof(subfilename));
   char *sc = subfilename + strlen(subfilename);
-  sprintf(sc, "/img_%d.html", num);
+  snprintf(sc, PATH_MAX - (sc - subfilename), "/img_%d.html", num);
   snprintf(relsubfilename, sizeof(relsubfilename), "img_%d.html", num);
 
   // escape special character and especially " which is used in <img>
@@ -437,7 +444,7 @@ int store(dt_imageio_module_storage_t *self,
     ;
   if(c <= filename || *c == '/') c = filename + strlen(filename);
   ext = format->extension(fdata);
-  sprintf(c, "-thumb.%s", ext);
+  snprintf(c, PATH_MAX - (c - filename), "-thumb.%s", ext);
   if(dt_imageio_export(imgid, filename, format, fdata, FALSE, TRUE, FALSE,
                        is_scaling, scale_factor,
                        export_masks, icc_type, icc_filename,
@@ -464,38 +471,39 @@ void finalize_store(dt_imageio_module_storage_t *self, dt_imageio_module_data_t 
   char filename[PATH_MAX] = { 0 };
   g_strlcpy(filename, d->cached_dirname, sizeof(filename));
   char *c = filename + strlen(filename);
+  const size_t remaining = PATH_MAX - (c - filename);
 
   // also create style/ subdir:
-  sprintf(c, "/style");
+  snprintf(c, remaining, "/style");
   g_mkdir_with_parents(filename, 0755);
-  sprintf(c, "/style/style.css");
+  snprintf(c, remaining, "/style/style.css");
   dt_copy_resource_file("/style/style.css", filename);
-  sprintf(c, "/style/favicon.ico");
+  snprintf(c, remaining, "/style/favicon.ico");
   dt_copy_resource_file("/style/favicon.ico", filename);
 
   // create subdir pswp for photoswipe scripts
-  sprintf(c, "/pswp/default-skin/");
+  snprintf(c, remaining, "/pswp/default-skin/");
   g_mkdir_with_parents(filename, 0755);
-  sprintf(c, "/pswp/photoswipe.js");
+  snprintf(c, remaining, "/pswp/photoswipe.js");
   dt_copy_resource_file("/pswp/photoswipe.js", filename);
-  sprintf(c, "/pswp/photoswipe.min.js");
+  snprintf(c, remaining, "/pswp/photoswipe.min.js");
   dt_copy_resource_file("/pswp/photoswipe.min.js", filename);
-  sprintf(c, "/pswp/photoswipe-ui-default.js");
+  snprintf(c, remaining, "/pswp/photoswipe-ui-default.js");
   dt_copy_resource_file("/pswp/photoswipe-ui-default.js", filename);
-  sprintf(c, "/pswp/photoswipe.css");
+  snprintf(c, remaining, "/pswp/photoswipe.css");
   dt_copy_resource_file("/pswp/photoswipe.css", filename);
-  sprintf(c, "/pswp/photoswipe-ui-default.min.js");
+  snprintf(c, remaining, "/pswp/photoswipe-ui-default.min.js");
   dt_copy_resource_file("/pswp/photoswipe-ui-default.min.js", filename);
-  sprintf(c, "/pswp/default-skin/default-skin.css");
+  snprintf(c, remaining, "/pswp/default-skin/default-skin.css");
   dt_copy_resource_file("/pswp/default-skin/default-skin.css", filename);
-  sprintf(c, "/pswp/default-skin/default-skin.png");
+  snprintf(c, remaining, "/pswp/default-skin/default-skin.png");
   dt_copy_resource_file("/pswp/default-skin/default-skin.png", filename);
-  sprintf(c, "/pswp/default-skin/default-skin.svg");
+  snprintf(c, remaining, "/pswp/default-skin/default-skin.svg");
   dt_copy_resource_file("/pswp/default-skin/default-skin.svg", filename);
-  sprintf(c, "/pswp/default-skin/preloader.gif");
+  snprintf(c, remaining, "/pswp/default-skin/preloader.gif");
   dt_copy_resource_file("/pswp/default-skin/preloader.gif", filename);
 
-  sprintf(c, "/index.html");
+  snprintf(c, remaining, "/index.html");
 
   const char *title = d->title;
 

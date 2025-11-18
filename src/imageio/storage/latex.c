@@ -180,6 +180,7 @@ static void title_changed_callback(GtkEntry *entry, gpointer user_data)
 void gui_init(dt_imageio_module_storage_t *self)
 {
   latex_t *d = malloc(sizeof(latex_t));
+  if(!d) return;
   self->gui_data = (void *)d;
 
   d->entry = GTK_ENTRY(dt_action_entry_new(DT_ACTION(self), N_("path"), G_CALLBACK(entry_changed_callback), self,
@@ -288,11 +289,17 @@ int store(dt_imageio_module_storage_t *self, dt_imageio_module_data_t *sdata, co
     //     for(; c>filename && *c != '.' && *c != '/' ; c--);
     //     if(c <= filename || *c=='/') c = filename + strlen(filename);
 
-    sprintf(c, ".%s", ext);
+    snprintf(c, PATH_MAX - (c - filename), ".%s", ext);
 
     // save image to list, in order:
     pair_t *pair = malloc(sizeof(pair_t));
-
+    if(!pair)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[imageio_storage_latex] memory allocation failed!");
+      dt_control_log(_("memory allocation failed!"));
+      dt_pthread_mutex_unlock(&darktable.plugin_threadsafe);
+      return 1;
+    }
 
 #if 0 // let's see if we actually want titles and such to be exported:
     char *title = NULL, *description = NULL, *tags = NULL;
@@ -380,11 +387,12 @@ void finalize_store(dt_imageio_module_storage_t *self, dt_imageio_module_data_t 
   char filename[PATH_MAX] = { 0 };
   g_strlcpy(filename, d->cached_dirname, sizeof(filename));
   char *c = filename + strlen(filename);
+  const size_t remaining = PATH_MAX - (c - filename);
 
-  sprintf(c, "/photobook.cls");
+  snprintf(c, remaining, "/photobook.cls");
   dt_copy_resource_file("/latex/photobook.cls", filename);
 
-  sprintf(c, "/main.tex");
+  snprintf(c, remaining, "/main.tex");
 
   const char *title = d->title;
 

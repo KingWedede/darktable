@@ -266,6 +266,7 @@ static void onsave_action_toggle_callback(GtkWidget *widget,
 void gui_init(dt_imageio_module_storage_t *self)
 {
   disk_t *d = malloc(sizeof(disk_t));
+  if(!d) return;
   self->gui_data = (void *)d;
 
   d->entry =
