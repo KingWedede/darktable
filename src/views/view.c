@@ -757,6 +757,18 @@ dt_view_surface_value_t dt_view_image_get_surface(const dt_imgid_t imgid,
   scale = fmaxf(img_width / (float)buf_wd, img_height / (float)buf_ht);
   *surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, img_width, img_height);
 
+  // Check for cairo surface creation failure
+  if(cairo_surface_status(*surface) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[view_image_get_surface] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(*surface)));
+    if(*surface)
+      cairo_surface_destroy(*surface);
+    *surface = NULL;
+    dt_mipmap_cache_release(&buf);
+    return DT_VIEW_SURFACE_KO;
+  }
+
   // we transfer cached image on a cairo_surface (with colorspace transform if needed)
   cairo_surface_t *tmp_surface = NULL;
   uint8_t *rgbbuf = calloc((size_t)buf_wd * buf_ht * 4, sizeof(uint8_t));
@@ -836,6 +848,19 @@ dt_view_surface_value_t dt_view_image_get_surface(const dt_imgid_t imgid,
   if(tmp_surface)
   {
     cairo_t *cr = cairo_create(*surface);
+    if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[view_image_get_surface] failed to create cairo context: %s\n",
+               cairo_status_to_string(cairo_status(cr)));
+      if(cr)
+        cairo_destroy(cr);
+      cairo_surface_destroy(tmp_surface);
+      cairo_surface_destroy(*surface);
+      *surface = NULL;
+      dt_mipmap_cache_release(&buf);
+      if(rgbbuf) free(rgbbuf);
+      return DT_VIEW_SURFACE_KO;
+    }
     cairo_scale(cr, scale, scale);
 
     cairo_set_source_surface(cr, tmp_surface, 0, 0);

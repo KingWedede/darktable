@@ -634,7 +634,23 @@ static gboolean _draw_borders(GtkWidget *widget,
   gtk_widget_get_allocation(widget, &allocation);
   const float width = allocation.width, height = allocation.height;
   cairo_surface_t *cst = dt_cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[gtk_ui_border_draw] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return FALSE;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[gtk_ui_border_draw] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return FALSE;
+  }
 
   GdkRGBA color;
   GtkStyleContext *context = gtk_widget_get_style_context(widget);

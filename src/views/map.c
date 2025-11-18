@@ -470,7 +470,24 @@ static GdkPixbuf *_view_map_images_count(const int nb_images,
   const int h = DT_PIXEL_APPLY_DPI(image_pin_size);
 
   cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_view_images_count] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_view_images_count] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   /* fill background */
   dt_gui_gtk_set_source_rgb(cr, DT_GUI_COLOR_MAP_COUNT_BG);
   cairo_paint(cr);
@@ -514,7 +531,24 @@ static GdkPixbuf *_init_image_pin()
   _rgba_from_color(thumb_frame_color, &r, &g, &b, &a);
 
   cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_init_image_pin] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_init_image_pin] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   cairo_set_source_rgba(cr, r, g, b, a);
   dtgtk_cairo_paint_map_pin(cr, (h-w)/2, 0, w, h, 0, NULL); // keep the pin on left
   cairo_destroy(cr);
@@ -533,7 +567,23 @@ static GdkPixbuf *_init_place_pin()
   float r, g, b, a;
 
   cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_init_place_pin] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_init_place_pin] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return NULL;
+  }
 
   // outer shape
   _rgba_from_color(pin_outer_color, &r, &g, &b, &a);
@@ -576,7 +626,23 @@ static GdkPixbuf *_draw_ellipse(const float dlongitude,
   const int d = DT_PIXEL_APPLY_DPI(main ? 2 : 1);
   const int cross = DT_PIXEL_APPLY_DPI(cross_size);
   cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_draw_ellipse] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_draw_ellipse] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return NULL;
+  }
 
   // clear background
   cairo_set_source_rgba(cr, 0, 0, 0, 0.0);
@@ -642,7 +708,23 @@ static GdkPixbuf *_draw_rectangle(const float dlongitude,
   const int d = DT_PIXEL_APPLY_DPI(main ? 2 : 1);
   const int cross = DT_PIXEL_APPLY_DPI(cross_size);
   cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_draw_rectangle] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return NULL;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_draw_rectangle] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return NULL;
+  }
 
   // clear background
   cairo_set_source_rgba(cr, 0, 0, 0, 0.0);
