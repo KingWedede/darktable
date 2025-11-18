@@ -3310,7 +3310,8 @@ static void _shortcuts_load(const gchar *shortcuts_file,
 
         dt_shortcut_t s = { .speed = 1 };
 
-        char *token = strtok(line, "=;");
+        char *saveptr = NULL;
+        char *token = strtok_r(line, "=;", &saveptr);
         if(g_ascii_strcasecmp(token, "None"))
         {
           char *colon = strchr(token, ':');
@@ -3369,7 +3370,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
           }
         }
 
-        while((token = strtok(NULL, "=;")) && token < act_start)
+        while((token = strtok_r(NULL, "=;", &saveptr)) && token < act_start)
         {
           char *colon = strchr(token, ':');
           if(!colon)
@@ -3457,7 +3458,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
         }
 
         gboolean disable = !g_ascii_strcasecmp(token, "disabled");
-        if(disable) token = strtok(NULL, ";");
+        if(disable) token = strtok_r(NULL, ";", &saveptr);
 
         s.action = _action_find(token);
 
@@ -3472,7 +3473,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
         const gchar **effects = NULL;
         const gint default_effect = s.effect = _shortcut_default_effect(&s);
 
-        while((token = strtok(NULL, ";")))
+        while((token = strtok_r(NULL, ";", &saveptr)))
         {
           if(elements)
           {

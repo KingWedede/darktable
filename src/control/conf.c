@@ -906,24 +906,29 @@ void dt_conf_save(dt_conf_t *cf)
   FILE *fc = g_fopen(cf->filename_common, "wb");
   FILE *fs = g_fopen(cf->filename, "wb");
 
-  if(fs && fc)
+  if(!fc || !fs)
   {
-    GList *keys = g_hash_table_get_keys(cf->table);
-    GList *sorted = g_list_sort(keys, (GCompareFunc)g_strcmp0);
-
-    for(GList *iter = sorted; iter; iter = g_list_next(iter))
-    {
-      const gchar *key = (const gchar *)iter->data;
-      const gchar *val = (const gchar *)g_hash_table_lookup(cf->table, key);
-
-      FILE *f = dt_confgen_is_common(key) ? fc : fs;
-      _conf_print(key, val, f);
-    }
-
-    g_list_free(sorted);
-    fclose(fs);
-    fclose(fc);
+    if(fc) fclose(fc);
+    if(fs) fclose(fs);
+    dt_print(DT_DEBUG_ALWAYS, "[conf_save] failed to open config files for writing\n");
+    return;
   }
+
+  GList *keys = g_hash_table_get_keys(cf->table);
+  GList *sorted = g_list_sort(keys, (GCompareFunc)g_strcmp0);
+
+  for(GList *iter = sorted; iter; iter = g_list_next(iter))
+  {
+    const gchar *key = (const gchar *)iter->data;
+    const gchar *val = (const gchar *)g_hash_table_lookup(cf->table, key);
+
+    FILE *f = dt_confgen_is_common(key) ? fc : fs;
+    _conf_print(key, val, f);
+  }
+
+  g_list_free(sorted);
+  fclose(fs);
+  fclose(fc);
 }
 void dt_conf_cleanup(dt_conf_t *cf)
 {
