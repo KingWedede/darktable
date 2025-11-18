@@ -1682,7 +1682,14 @@ void dt_bauhaus_combobox_set_editable(GtkWidget *widget,
   dt_bauhaus_combobox_data_t *d = &w->combobox;
   d->editable = editable ? 1 : 0;
   if(d->editable && !d->text)
+  {
     d->text = calloc(1, DT_BAUHAUS_MAX_TEXT);
+    if(!d->text)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[bauhaus_combobox] failed to allocate text buffer\n");
+      d->editable = 0; // Disable editing if allocation failed
+    }
+  }
 }
 
 int dt_bauhaus_combobox_get_editable(GtkWidget *widget)

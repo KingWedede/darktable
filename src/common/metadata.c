@@ -209,6 +209,11 @@ void dt_metadata_init()
     int display_order = sqlite3_column_int(stmt, 6);
 
     dt_metadata_t *metadata = calloc(1, sizeof(dt_metadata_t));
+    if(!metadata)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[metadata_init] memory allocation failed for metadata entry!\n");
+      continue; // Skip this entry and try to load others
+    }
     metadata->key = key;
     metadata->tagname = g_strdup(tagname);
     metadata->name = g_strdup(name);

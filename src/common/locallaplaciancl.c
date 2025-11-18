@@ -91,8 +91,22 @@ dt_local_laplacian_cl_t *dt_local_laplacian_init_cl(
   g->dev_padded = calloc(max_levels, sizeof(cl_mem));
   g->dev_output = calloc(max_levels, sizeof(cl_mem));
   g->dev_processed = calloc(num_gamma, sizeof(cl_mem *));
+
+  if(!g->dev_padded || !g->dev_output || !g->dev_processed)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[locallaplaciancl] failed to allocate OpenCL buffer arrays!\n");
+    goto error;
+  }
+
   for(int k=0;k<num_gamma;k++)
+  {
     g->dev_processed[k] = calloc(max_levels, sizeof(cl_mem));
+    if(!g->dev_processed[k])
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[locallaplaciancl] failed to allocate processed buffer array for gamma %d!\n", k);
+      goto error;
+    }
+  }
 
   g->num_levels = MIN(max_levels, 31-__builtin_clz(MIN(width,height)));
   g->max_supp = 1<<(g->num_levels-1);

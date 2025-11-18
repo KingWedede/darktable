@@ -369,6 +369,12 @@ dt_l10n_t *dt_l10n_init(const gboolean init_list)
     dt_l10n_language_t *sys_default = NULL;
 
     dt_l10n_language_t *language = calloc(1, sizeof(dt_l10n_language_t));
+    if(!language)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[l10n_init] failed to allocate language entry!\n");
+      g_free(ui_lang);
+      return result; // Return minimal structure with just selected/sys_default
+    }
     language->code = g_strdup("C");
     language->base_code = g_strdup("C");
     language->name = g_strdup("English");
@@ -392,6 +398,12 @@ dt_l10n_t *dt_l10n_init(const gboolean init_list)
         if(g_file_test(testname, G_FILE_TEST_EXISTS))
         {
           language = calloc(1, sizeof(dt_l10n_language_t));
+          if(!language)
+          {
+            dt_print(DT_DEBUG_ALWAYS, "[l10n_init] failed to allocate language for %s!\n", locale);
+            g_free(testname);
+            continue; // Skip this language and try others
+          }
           result->languages = g_list_prepend(result->languages, language);
 
           // some languages have a regional part in the filename, we
