@@ -3307,6 +3307,8 @@ void init_pipe(dt_iop_module_t *self,
                dt_dev_pixelpipe_iop_t *piece)
 {
   piece->data = calloc(1, sizeof(dt_iop_lens_data_t));
+  if(!piece->data)
+    dt_print(DT_DEBUG_ALWAYS, "[lens_init_pipe] failed to allocate piece data!\n");
 }
 
 void cleanup_pipe(dt_iop_module_t *self,

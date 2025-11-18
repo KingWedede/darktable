@@ -1480,6 +1480,11 @@ void init_pipe(dt_iop_module_t *self,
 {
   // create part of the pixelpipe
   piece->data = calloc(1, sizeof(dt_iop_basecurve_data_t));
+  if(!piece->data)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[basecurve_init_pipe] failed to allocate piece data!\n");
+    return;
+  }
   self->commit_params(self, self->default_params, pipe, piece);
 }
 
