@@ -132,6 +132,11 @@ static void _view_capture_filmstrip_activate_callback(gpointer instance,
 void init(dt_view_t *self)
 {
   self->data = calloc(1, sizeof(dt_capture_t));
+  if(!self->data)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[tethering_init] failed to allocate capture view structure!\n");
+    return;
+  }
 
   /* setup the tethering view proxy */
   darktable.view_manager->proxy.tethering.view = self;

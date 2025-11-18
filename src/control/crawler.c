@@ -216,6 +216,11 @@ GList *dt_control_crawler_run(void)
       if(timestamp + MAX_TIME_SKEW < statbuf.st_mtime)
       {
         dt_control_crawler_result_t *item = malloc(sizeof(dt_control_crawler_result_t));
+        if(!item)
+        {
+          dt_print(DT_DEBUG_ALWAYS, "[crawler] failed to allocate result item!\n");
+          continue;
+        }
         item->id = id;
         item->timestamp_xmp = statbuf.st_mtime;
         item->timestamp_db = timestamp;

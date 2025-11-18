@@ -1902,10 +1902,10 @@ void gui_init(dt_iop_module_t *self)
 
   g->main_box = gtk_event_box_new(); // is filled in _configure_slider_blocks
 
-  char field_name[10];
+  char field_name[32];
 
 #define ADD_CHANNEL(which, section, c, n, N, text, span)                    \
-  sprintf(field_name, "%s[%d]", #which, CHANNEL_##N);                       \
+  snprintf(field_name, sizeof(field_name), "%s[%d]", #which, CHANNEL_##N);  \
   g->which##_##c = dt_bauhaus_slider_from_params(self, field_name);         \
   dt_bauhaus_slider_set_soft_range(g->which##_##c, -span+1.0, span+1.0);    \
   dt_bauhaus_slider_set_digits(g->which##_##c, 5);                          \
@@ -1917,7 +1917,7 @@ void gui_init(dt_iop_module_t *self)
 #define ADD_BLOCK(blk, which, section, text, span, satspan)                 \
   g->blocks[blk] = self->widget = dt_gui_vbox();                            \
                                                                             \
-  sprintf(field_name, "%s[%d]", #which, CHANNEL_FACTOR);                    \
+  snprintf(field_name, sizeof(field_name), "%s[%d]", #which, CHANNEL_FACTOR); \
   g->which##_factor = dt_color_picker_new(self, DT_COLOR_PICKER_AREA,       \
                       dt_bauhaus_slider_from_params(self, field_name));     \
   dt_bauhaus_slider_set_soft_range(g->which##_factor, -span+1.0, span+1.0); \

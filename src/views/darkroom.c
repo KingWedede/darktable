@@ -153,6 +153,11 @@ static void _get_zoom_pos_bnd(dt_dev_viewport_t *port,
 void init(dt_view_t *self)
 {
   dt_develop_t *dev = malloc(sizeof(dt_develop_t));
+  if(!dev)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[darkroom_init] CRITICAL: failed to allocate darkroom structure!\n");
+    return;
+  }
   self->data = darktable.develop = dev;
 
   dt_dev_init(dev, TRUE);
@@ -1122,6 +1127,11 @@ static gboolean _dev_load_requested_image(gpointer user_data)
   if(!dev->form_gui)
   {
     dev->form_gui = (dt_masks_form_gui_t *)calloc(1, sizeof(dt_masks_form_gui_t));
+    if(!dev->form_gui)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[darkroom] failed to allocate form_gui structure!\n");
+      return;
+    }
     dt_masks_init_form_gui(dev->form_gui);
   }
   dt_masks_change_form_gui(NULL);
@@ -3015,6 +3025,11 @@ void enter(dt_view_t *self)
   if(!dev->form_gui)
   {
     dev->form_gui = (dt_masks_form_gui_t *)calloc(1, sizeof(dt_masks_form_gui_t));
+    if(!dev->form_gui)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[darkroom] failed to allocate form_gui structure!\n");
+      return;
+    }
     dt_masks_init_form_gui(dev->form_gui);
   }
   dt_masks_change_form_gui(NULL);

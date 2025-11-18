@@ -341,6 +341,11 @@ int write_image(dt_imageio_module_data_t *j2k_tmp, const char *filename, const v
   if(parameters.cp_cinema)
   {
     rates = (float *)calloc(parameters.tcp_numlayers, sizeof(float));
+    if(!rates)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[j2k_write_image] failed to allocate rates array!\n");
+      return 1;
+    }
     for(int i = 0; i < parameters.tcp_numlayers; i++)
     {
       rates[i] = parameters.tcp_rates[i];
@@ -630,6 +635,11 @@ void *legacy_params(dt_imageio_module_format_t *self,
 void *get_params(dt_imageio_module_format_t *self)
 {
   dt_imageio_j2k_t *d = calloc(1, sizeof(dt_imageio_j2k_t));
+  if(!d)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[j2k_get_params] failed to allocate params structure!\n");
+    return NULL;
+  }
   d->bpp = 12; // can be 8, 12 or 16
   d->preset = dt_conf_get_int("plugins/imageio/format/j2k/preset");
   d->quality = dt_conf_get_int("plugins/imageio/format/j2k/quality");

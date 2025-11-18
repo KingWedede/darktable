@@ -707,6 +707,11 @@ void expose(dt_view_t *self,
 void init(dt_view_t *self)
 {
   self->data = calloc(1, sizeof(dt_map_t));
+  if(!self->data)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[map_init] failed to allocate map view structure!\n");
+    return;
+  }
 
   dt_map_t *lib = self->data;
 
