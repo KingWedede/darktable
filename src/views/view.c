@@ -1666,6 +1666,21 @@ void dt_view_audio_start(dt_view_manager_t *vm,
   g_free(player);
 }
 
+/**
+ * @brief Stop audio playback and terminate player process
+ *
+ * Terminates the currently running audio player process (if any) that was
+ * started for slideshow audio playback. Handles platform-specific process
+ * termination correctly.
+ *
+ * @param vm View manager containing audio player state
+ *
+ * Platform-specific behavior:
+ * - Windows: Uses TerminateProcess() with GPid as HANDLE
+ * - Unix/Linux/macOS: Uses kill() with SIGKILL, handling process groups
+ *
+ * @note This function is safe to call multiple times or when no player is running
+ */
 void dt_view_audio_stop(dt_view_manager_t *vm)
 {
   // make sure that the process didn't finish yet and that _audio_child_watch() hasn't run

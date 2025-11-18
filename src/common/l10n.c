@@ -35,6 +35,25 @@
 #include <windows.h>
 #endif
 
+/**
+ * @brief Construct full locale name from short code
+ *
+ * Attempts to find or construct a complete locale string from a short
+ * language code. On Linux/macOS, queries the system's available locales.
+ * On Windows, constructs a standardized locale string.
+ *
+ * @param locale Short locale code (e.g., "en", "de", "fr")
+ *
+ * @return Dynamically allocated full locale string (e.g., "en_US.UTF-8")
+ *         or NULL if not found/constructable. Caller must free with g_free().
+ *
+ * Platform-specific behavior:
+ * - Linux/macOS: Runs `locale -a` and finds matching locale
+ * - Windows: Constructs locale string in standard format:
+ *   - "en" -> "en_EN.UTF-8"
+ *   - "en_US" -> "en_US.UTF-8"
+ *   - "en_US.UTF-8" -> "en_US.UTF-8" (passthrough)
+ */
 static gchar* _dt_full_locale_name(const char *locale)
 {
 #if defined(__linux__) || defined(__APPLE__)

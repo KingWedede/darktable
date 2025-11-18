@@ -247,6 +247,39 @@ static gint sort_pos(pair_t *a, pair_t *b)
   return a->pos - b->pos;
 }
 
+/**
+ * @brief Store a single image for website gallery export
+ *
+ * This function is called for each image in the export batch. It:
+ * 1. Constructs safe file paths using snprintf with bounds checking
+ * 2. Creates the export directory structure
+ * 3. Exports the full-size image
+ * 4. Generates a thumbnail version
+ * 5. Collects metadata (title/description) if available
+ * 6. Adds the image entry to an ordered list for HTML generation
+ *
+ * @param self Storage module instance
+ * @param sdata Storage module data containing export configuration
+ * @param imgid ID of the image to export
+ * @param format Export format module (JPEG, PNG, etc.)
+ * @param fdata Format-specific export parameters
+ * @param num Current image number in sequence (1-based)
+ * @param total Total number of images being exported
+ * @param high_quality Enable high quality export settings
+ * @param upscale Allow upscaling if image is smaller than target
+ * @param is_scaling Whether scaling is being applied
+ * @param scale_factor Scaling factor to apply
+ * @param export_masks Whether to export mask data
+ * @param icc_type Color profile type for export
+ * @param icc_filename Path to ICC profile file (if applicable)
+ * @param icc_intent Color rendering intent
+ * @param metadata Metadata export configuration
+ *
+ * @return 0 on success, 1 on failure
+ *
+ * @note All path operations use snprintf with PATH_MAX bounds checking
+ *       to prevent buffer overflows on Windows UNC paths and long paths
+ */
 int store(dt_imageio_module_storage_t *self,
           dt_imageio_module_data_t *sdata,
           const dt_imgid_t imgid,
@@ -465,6 +498,25 @@ int store(dt_imageio_module_storage_t *self,
   return 0;
 }
 
+/**
+ * @brief Finalize gallery export by generating HTML index and resources
+ *
+ * Called after all images have been exported via store(). This function:
+ * 1. Creates directory structure for CSS, JavaScript, and icons
+ * 2. Copies PhotoSwipe library files for image viewing
+ * 3. Generates index.html with responsive gallery layout
+ * 4. Embeds all image metadata into JavaScript array
+ * 5. Frees the temporary image list
+ *
+ * The generated gallery uses PhotoSwipe for touch-enabled, responsive
+ * image viewing with swipe gestures and keyboard navigation.
+ *
+ * @param self Storage module instance
+ * @param dd Storage module data containing collected image entries
+ *
+ * @note Path construction uses snprintf with calculated remaining space
+ *       to safely handle long paths and prevent buffer overflows
+ */
 void finalize_store(dt_imageio_module_storage_t *self, dt_imageio_module_data_t *dd)
 {
   dt_imageio_gallery_t *d = (dt_imageio_gallery_t *)dd;
