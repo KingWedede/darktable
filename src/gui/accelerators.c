@@ -1792,7 +1792,19 @@ static void _element_changed(GtkCellRendererCombo *combo,
   GtkTreeModel *model = NULL;
   g_object_get(combo, "model", &model, NULL);
   GtkTreePath *path = gtk_tree_model_get_path(model, new_iter);
-  const gint new_index = gtk_tree_path_get_indices(path)[0];
+  if(!path)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_element_changed] failed to get tree path!\n");
+    return;
+  }
+  const gint *indices = gtk_tree_path_get_indices(path);
+  if(!indices)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_element_changed] failed to get tree path indices!\n");
+    gtk_tree_path_free(path);
+    return;
+  }
+  const gint new_index = indices[0];
   gtk_tree_path_free(path);
 
   const dt_action_element_def_t *elements = _action_find_elements(s->action);
@@ -1915,7 +1927,19 @@ static void _effect_changed(GtkCellRendererCombo *combo,
   GtkTreeModel *model = NULL;
   g_object_get(combo, "model", &model, NULL);
   GtkTreePath *path = gtk_tree_model_get_path(model, new_iter);
-  const gint new_index = s->effect = gtk_tree_path_get_indices(path)[0];
+  if(!path)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_effect_changed] failed to get tree path!\n");
+    return;
+  }
+  const gint *indices = gtk_tree_path_get_indices(path);
+  if(!indices)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_effect_changed] failed to get tree path indices!\n");
+    gtk_tree_path_free(path);
+    return;
+  }
+  const gint new_index = indices[0];
   gtk_tree_path_free(path);
 
   if(_shortcut_is_move(s) &&
@@ -3271,7 +3295,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
     {
       char line[1024];
       char *read = fgets(line, sizeof(line), f);
-      if(read > 0)
+      if(read != NULL)
       {
         line[strcspn(line, "\r\n")] = '\0';
 
