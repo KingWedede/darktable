@@ -329,6 +329,11 @@ end:
 dt_l10n_t *dt_l10n_init(const gboolean init_list)
 {
   dt_l10n_t *result = calloc(1, sizeof(dt_l10n_t));
+  if(!result)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[l10n_init] CRITICAL: failed to allocate localization structure!\n");
+    return NULL;
+  }
   result->selected = -1;
   result->sys_default = -1;
 

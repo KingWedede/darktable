@@ -859,6 +859,11 @@ void dt_bauhaus_load_theme()
 void dt_bauhaus_init()
 {
   darktable.bauhaus = (dt_bauhaus_t *)calloc(1, sizeof(dt_bauhaus_t));
+  if(!darktable.bauhaus)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[bauhaus_init] CRITICAL: failed to allocate bauhaus core structure!\n");
+    return;
+  }
   dt_bauhaus_t *bh = darktable.bauhaus;
   dt_bauhaus_popup_t *pop = &bh->popup;
 
