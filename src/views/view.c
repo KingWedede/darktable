@@ -1675,7 +1675,11 @@ void dt_view_audio_stop(dt_view_manager_t *vm)
   // we don't want to trigger the callback due to a possible race condition
   g_source_remove(vm->audio.audio_player_event_source);
 #ifdef _WIN32
-// TODO: add Windows code to actually kill the process
+  if(vm->audio.audio_player_id != -1)
+  {
+    // On Windows, GPid is a HANDLE, and we use TerminateProcess to kill it
+    TerminateProcess(vm->audio.audio_player_pid, 1);
+  }
 #else  // _WIN32
   if(vm->audio.audio_player_id != -1)
   {

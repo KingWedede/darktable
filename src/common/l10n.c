@@ -71,9 +71,27 @@ static gchar* _dt_full_locale_name(const char *locale)
     }
   }
   return NULL;
-#else
-  // TODO: check a way to do above on windows
-  return NULL;
+#else  // Windows
+  // On Windows, attempt to construct a full locale name
+  // Common pattern: language_COUNTRY.encoding (e.g., en_US.UTF-8)
+  if(strchr(locale, '.'))
+  {
+    // Already has encoding, return as-is
+    return g_strdup(locale);
+  }
+  else if(strchr(locale, '_'))
+  {
+    // Has language_COUNTRY, add UTF-8 encoding
+    return g_strdup_printf("%s.UTF-8", locale);
+  }
+  else
+  {
+    // Short form like "en" or "de", construct with uppercase country code
+    gchar *upper = g_ascii_strup(locale, -1);
+    gchar *full = g_strdup_printf("%s_%s.UTF-8", locale, upper);
+    g_free(upper);
+    return full;
+  }
 #endif
 }
 
