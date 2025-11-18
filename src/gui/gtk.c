@@ -3159,6 +3159,9 @@ char *dt_gui_show_standalone_string_dialog(const char *title,
   gtk_widget_show_all(window);
   gtk_main();
 
+  // Unref the entry widget to prevent memory leak
+  g_object_unref(entry);
+
   if(result.result == RESULT_YES)
     return result.entry_text;
 
@@ -4271,6 +4274,9 @@ void dt_gui_menu_popup(GtkMenu *menu,
 
     gtk_menu_popup_at_pointer(menu, event);
   }
+  // Unref the window before freeing the event to prevent memory leak
+  if(event->button.window)
+    g_object_unref(event->button.window);
   gdk_event_free(event);
 }
 

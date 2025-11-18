@@ -238,6 +238,9 @@ static float _action_process_toggle(gpointer target,
     event->type = GDK_BUTTON_RELEASE;
     g_signal_emit_by_name(G_OBJECT(target), "button-release-event", event, &handled);
 
+    // Unref the window before freeing the event to prevent memory leak
+    if(event->button.window)
+      g_object_unref(event->button.window);
     gdk_event_free(event);
 
     value = gtk_toggle_button_get_active(target);
@@ -281,6 +284,9 @@ static float _action_process_button(gpointer target,
       event->type = GDK_BUTTON_RELEASE;
       gtk_widget_event(target, event);
 
+      // Unref the window before freeing the event to prevent memory leak
+      if(event->button.window)
+        g_object_unref(event->button.window);
       gdk_event_free(event);
     }
   }
