@@ -1084,8 +1084,41 @@ cl_int dt_gaussian_fast_blur_cl_buffer(const int devid,
   cl_int err = CL_MEM_OBJECT_ALLOCATION_FAILURE;
   dt_gaussian_cl_global_t *global = darktable.opencl->gaussian;
 
+  // Validate dimensions
+  if(width <= 0 || height <= 0 || ch <= 0)
+  {
+    dt_print(DT_DEBUG_OPENCL, "[gaussian] invalid dimensions: %dx%dx%d\n", width, height, ch);
+    err = CL_INVALID_VALUE;
+    goto error;
+  }
+
+  // Check for overflow in buffer size calculation: ch * width * height * sizeof(float)
+  size_t bsize = (size_t)ch;
+  if(bsize > SIZE_MAX / (size_t)width)
+  {
+    dt_print(DT_DEBUG_OPENCL, "[gaussian] buffer size overflow (ch*width): %d*%d\n", ch, width);
+    err = CL_INVALID_BUFFER_SIZE;
+    goto error;
+  }
+  bsize *= width;
+
+  if(bsize > SIZE_MAX / (size_t)height)
+  {
+    dt_print(DT_DEBUG_OPENCL, "[gaussian] buffer size overflow (bsize*height): %zu*%d\n", bsize, height);
+    err = CL_INVALID_BUFFER_SIZE;
+    goto error;
+  }
+  bsize *= height;
+
+  if(bsize > SIZE_MAX / sizeof(float))
+  {
+    dt_print(DT_DEBUG_OPENCL, "[gaussian] buffer size overflow (bsize*sizeof(float)): %zu*%zu\n", bsize, sizeof(float));
+    err = CL_INVALID_BUFFER_SIZE;
+    goto error;
+  }
+  bsize *= sizeof(float);
+
   const gboolean inplace = (dev_in == dev_out);
-  const size_t bsize = (size_t)ch * width * height * sizeof(float);
   cl_mem tmp_out = dev_out;
   cl_mem kern_cl = NULL;
 

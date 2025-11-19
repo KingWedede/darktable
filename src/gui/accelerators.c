@@ -238,6 +238,9 @@ static float _action_process_toggle(gpointer target,
     event->type = GDK_BUTTON_RELEASE;
     g_signal_emit_by_name(G_OBJECT(target), "button-release-event", event, &handled);
 
+    // Unref the window before freeing the event to prevent memory leak
+    if(event->button.window)
+      g_object_unref(event->button.window);
     gdk_event_free(event);
 
     value = gtk_toggle_button_get_active(target);
@@ -281,6 +284,9 @@ static float _action_process_button(gpointer target,
       event->type = GDK_BUTTON_RELEASE;
       gtk_widget_event(target, event);
 
+      // Unref the window before freeing the event to prevent memory leak
+      if(event->button.window)
+        g_object_unref(event->button.window);
       gdk_event_free(event);
     }
   }
@@ -1786,7 +1792,19 @@ static void _element_changed(GtkCellRendererCombo *combo,
   GtkTreeModel *model = NULL;
   g_object_get(combo, "model", &model, NULL);
   GtkTreePath *path = gtk_tree_model_get_path(model, new_iter);
-  const gint new_index = gtk_tree_path_get_indices(path)[0];
+  if(!path)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_element_changed] failed to get tree path!\n");
+    return;
+  }
+  const gint *indices = gtk_tree_path_get_indices(path);
+  if(!indices)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_element_changed] failed to get tree path indices!\n");
+    gtk_tree_path_free(path);
+    return;
+  }
+  const gint new_index = indices[0];
   gtk_tree_path_free(path);
 
   const dt_action_element_def_t *elements = _action_find_elements(s->action);
@@ -1909,7 +1927,19 @@ static void _effect_changed(GtkCellRendererCombo *combo,
   GtkTreeModel *model = NULL;
   g_object_get(combo, "model", &model, NULL);
   GtkTreePath *path = gtk_tree_model_get_path(model, new_iter);
-  const gint new_index = s->effect = gtk_tree_path_get_indices(path)[0];
+  if(!path)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_effect_changed] failed to get tree path!\n");
+    return;
+  }
+  const gint *indices = gtk_tree_path_get_indices(path);
+  if(!indices)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[accelerators_effect_changed] failed to get tree path indices!\n");
+    gtk_tree_path_free(path);
+    return;
+  }
+  const gint new_index = indices[0];
   gtk_tree_path_free(path);
 
   if(_shortcut_is_move(s) &&
@@ -3265,7 +3295,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
     {
       char line[1024];
       char *read = fgets(line, sizeof(line), f);
-      if(read > 0)
+      if(read != NULL)
       {
         line[strcspn(line, "\r\n")] = '\0';
 
@@ -3280,7 +3310,8 @@ static void _shortcuts_load(const gchar *shortcuts_file,
 
         dt_shortcut_t s = { .speed = 1 };
 
-        char *token = strtok(line, "=;");
+        char *saveptr = NULL;
+        char *token = strtok_r(line, "=;", &saveptr);
         if(g_ascii_strcasecmp(token, "None"))
         {
           char *colon = strchr(token, ':');
@@ -3339,7 +3370,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
           }
         }
 
-        while((token = strtok(NULL, "=;")) && token < act_start)
+        while((token = strtok_r(NULL, "=;", &saveptr)) && token < act_start)
         {
           char *colon = strchr(token, ':');
           if(!colon)
@@ -3427,7 +3458,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
         }
 
         gboolean disable = !g_ascii_strcasecmp(token, "disabled");
-        if(disable) token = strtok(NULL, ";");
+        if(disable) token = strtok_r(NULL, ";", &saveptr);
 
         s.action = _action_find(token);
 
@@ -3442,7 +3473,7 @@ static void _shortcuts_load(const gchar *shortcuts_file,
         const gchar **effects = NULL;
         const gint default_effect = s.effect = _shortcut_default_effect(&s);
 
-        while((token = strtok(NULL, ";")))
+        while((token = strtok_r(NULL, ";", &saveptr)))
         {
           if(elements)
           {

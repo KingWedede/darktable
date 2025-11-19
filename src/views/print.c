@@ -136,6 +136,11 @@ static gboolean _drag_motion_received(GtkWidget *widget,
 void init(dt_view_t *self)
 {
   self->data = calloc(1, sizeof(dt_print_t));
+  if(!self->data)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[print_init] failed to allocate print view structure!\n");
+    return;
+  }
 
   /* initialize CB to get the print settings from corresponding lib module */
   darktable.view_manager->proxy.print.view = self;

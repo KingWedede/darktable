@@ -35,6 +35,25 @@
 #include <windows.h>
 #endif
 
+/**
+ * @brief Construct full locale name from short code
+ *
+ * Attempts to find or construct a complete locale string from a short
+ * language code. On Linux/macOS, queries the system's available locales.
+ * On Windows, constructs a standardized locale string.
+ *
+ * @param locale Short locale code (e.g., "en", "de", "fr")
+ *
+ * @return Dynamically allocated full locale string (e.g., "en_US.UTF-8")
+ *         or NULL if not found/constructable. Caller must free with g_free().
+ *
+ * Platform-specific behavior:
+ * - Linux/macOS: Runs `locale -a` and finds matching locale
+ * - Windows: Constructs locale string in standard format:
+ *   - "en" -> "en_EN.UTF-8"
+ *   - "en_US" -> "en_US.UTF-8"
+ *   - "en_US.UTF-8" -> "en_US.UTF-8" (passthrough)
+ */
 static gchar* _dt_full_locale_name(const char *locale)
 {
 #if defined(__linux__) || defined(__APPLE__)
@@ -71,9 +90,27 @@ static gchar* _dt_full_locale_name(const char *locale)
     }
   }
   return NULL;
-#else
-  // TODO: check a way to do above on windows
-  return NULL;
+#else  // Windows
+  // On Windows, attempt to construct a full locale name
+  // Common pattern: language_COUNTRY.encoding (e.g., en_US.UTF-8)
+  if(strchr(locale, '.'))
+  {
+    // Already has encoding, return as-is
+    return g_strdup(locale);
+  }
+  else if(strchr(locale, '_'))
+  {
+    // Has language_COUNTRY, add UTF-8 encoding
+    return g_strdup_printf("%s.UTF-8", locale);
+  }
+  else
+  {
+    // Short form like "en" or "de", construct with uppercase country code
+    gchar *upper = g_ascii_strup(locale, -1);
+    gchar *full = g_strdup_printf("%s_%s.UTF-8", locale, upper);
+    g_free(upper);
+    return full;
+  }
 #endif
 }
 
@@ -311,6 +348,11 @@ end:
 dt_l10n_t *dt_l10n_init(const gboolean init_list)
 {
   dt_l10n_t *result = calloc(1, sizeof(dt_l10n_t));
+  if(!result)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[l10n_init] CRITICAL: failed to allocate localization structure!\n");
+    return NULL;
+  }
   result->selected = -1;
   result->sys_default = -1;
 
@@ -346,6 +388,12 @@ dt_l10n_t *dt_l10n_init(const gboolean init_list)
     dt_l10n_language_t *sys_default = NULL;
 
     dt_l10n_language_t *language = calloc(1, sizeof(dt_l10n_language_t));
+    if(!language)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[l10n_init] failed to allocate language entry!\n");
+      g_free(ui_lang);
+      return result; // Return minimal structure with just selected/sys_default
+    }
     language->code = g_strdup("C");
     language->base_code = g_strdup("C");
     language->name = g_strdup("English");
@@ -369,6 +417,12 @@ dt_l10n_t *dt_l10n_init(const gboolean init_list)
         if(g_file_test(testname, G_FILE_TEST_EXISTS))
         {
           language = calloc(1, sizeof(dt_l10n_language_t));
+          if(!language)
+          {
+            dt_print(DT_DEBUG_ALWAYS, "[l10n_init] failed to allocate language for %s!\n", locale);
+            g_free(testname);
+            continue; // Skip this language and try others
+          }
           result->languages = g_list_prepend(result->languages, language);
 
           // some languages have a regional part in the filename, we

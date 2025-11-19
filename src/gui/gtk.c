@@ -634,7 +634,23 @@ static gboolean _draw_borders(GtkWidget *widget,
   gtk_widget_get_allocation(widget, &allocation);
   const float width = allocation.width, height = allocation.height;
   cairo_surface_t *cst = dt_cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[gtk_ui_border_draw] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return FALSE;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[gtk_ui_border_draw] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return FALSE;
+  }
 
   GdkRGBA color;
   GtkStyleContext *context = gtk_widget_get_style_context(widget);
@@ -3159,6 +3175,9 @@ char *dt_gui_show_standalone_string_dialog(const char *title,
   gtk_widget_show_all(window);
   gtk_main();
 
+  // Unref the entry widget to prevent memory leak
+  g_object_unref(entry);
+
   if(result.result == RESULT_YES)
     return result.entry_text;
 
@@ -4271,6 +4290,9 @@ void dt_gui_menu_popup(GtkMenu *menu,
 
     gtk_menu_popup_at_pointer(menu, event);
   }
+  // Unref the window before freeing the event to prevent memory leak
+  if(event->button.window)
+    g_object_unref(event->button.window);
   gdk_event_free(event);
 }
 

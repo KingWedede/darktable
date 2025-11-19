@@ -617,6 +617,17 @@ void dt_control_jobs_init()
   control->thread = (pthread_t *)calloc(control->num_threads, sizeof(pthread_t));
   control->job = (dt_job_t **)calloc(control->num_threads, sizeof(dt_job_t *));
 
+  if(!control->thread || !control->job)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[control_jobs_init] CRITICAL: failed to allocate thread arrays!\n");
+    free(control->thread);
+    free(control->job);
+    control->thread = NULL;
+    control->job = NULL;
+    control->num_threads = 0;
+    return;
+  }
+
   g_atomic_int_set(&control->running, DT_CONTROL_STATE_RUNNING);
 
   int err = 0; // collected errors while creating all threads
@@ -624,6 +635,12 @@ void dt_control_jobs_init()
   for(int k = 0; k < control->num_threads; k++)
   {
     worker_thread_parameters_t *params = calloc(1, sizeof(worker_thread_parameters_t));
+    if(!params)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[control_jobs_init] failed to allocate worker thread parameters!\n");
+      err = 1;
+      continue;
+    }
     params->self = control;
     params->threadid = k;
     err |= dt_pthread_create(&control->thread[k], _control_work, params);
@@ -637,6 +654,12 @@ void dt_control_jobs_init()
     control->job_res[k] = NULL;
     control->new_res[k] = 0;
     worker_thread_parameters_t *params = calloc(1, sizeof(worker_thread_parameters_t));
+    if(!params)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[control_jobs_init] failed to allocate reserved worker parameters!\n");
+      err = 1;
+      continue;
+    }
     params->self = control;
     params->threadid = k;
     err |= dt_pthread_create(&control->thread_res[k], _control_work_res, params);

@@ -128,16 +128,30 @@ GList *dt_control_crawler_run(void)
   }
 
   // clang-format off
-  sqlite3_prepare_v2(dt_database_get(darktable.db),
-                     "SELECT i.id, write_timestamp, version,"
-                     "       folder || '" G_DIR_SEPARATOR_S "' || filename, flags"
-                     " FROM main.images i, main.film_rolls f"
-                     " ON i.film_id = f.id"
-                     " ORDER BY f.id, filename",
-                     -1, &stmt, NULL);
-  sqlite3_prepare_v2(dt_database_get(darktable.db),
-                     "UPDATE main.images SET flags = ?1 WHERE id = ?2", -1,
-                     &inner_stmt, NULL);
+  int rc = sqlite3_prepare_v2(dt_database_get(darktable.db),
+                               "SELECT i.id, write_timestamp, version,"
+                               "       folder || '" G_DIR_SEPARATOR_S "' || filename, flags"
+                               " FROM main.images i, main.film_rolls f"
+                               " ON i.film_id = f.id"
+                               " ORDER BY f.id, filename",
+                               -1, &stmt, NULL);
+  if(rc != SQLITE_OK)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[crawler] failed to prepare SELECT statement: %s\n",
+             sqlite3_errmsg(dt_database_get(darktable.db)));
+    return NULL;
+  }
+
+  rc = sqlite3_prepare_v2(dt_database_get(darktable.db),
+                          "UPDATE main.images SET flags = ?1 WHERE id = ?2", -1,
+                          &inner_stmt, NULL);
+  if(rc != SQLITE_OK)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[crawler] failed to prepare UPDATE statement: %s\n",
+             sqlite3_errmsg(dt_database_get(darktable.db)));
+    sqlite3_finalize(stmt);
+    return NULL;
+  }
   // clang-format on
 
   // let's wrap this into a transaction, it might make it a little faster.
@@ -158,6 +172,13 @@ GList *dt_control_crawler_run(void)
     const gchar *image_path = (char *)sqlite3_column_text(stmt, 3);
     int flags = sqlite3_column_int(stmt, 4);
     ++image_count;
+
+    // Check for NULL path from database
+    if(!image_path)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[crawler] NULL image path for id: %d, skipping\n", id);
+      continue;
+    }
 
     // update the progress message - five times per second for first four seconds, then once per second
     const double curr_time = dt_get_wtime();
@@ -216,6 +237,11 @@ GList *dt_control_crawler_run(void)
       if(timestamp + MAX_TIME_SKEW < statbuf.st_mtime)
       {
         dt_control_crawler_result_t *item = malloc(sizeof(dt_control_crawler_result_t));
+        if(!item)
+        {
+          dt_print(DT_DEBUG_ALWAYS, "[crawler] failed to allocate result item!\n");
+          continue;
+        }
         item->id = id;
         item->timestamp_xmp = statbuf.st_mtime;
         item->timestamp_db = timestamp;

@@ -1219,10 +1219,10 @@ static inline gboolean wavelets_process(const float *const restrict in,
     if(darktable.dump_pfm_module)
     {
       char name[64];
-      sprintf(name, "scale-input-%i", s);
+      snprintf(name, sizeof(name), "scale-input-%i", s);
       dt_dump_pfm(name, buffer_in, width, height, 4 * sizeof(float), "diffuse");
 
-      sprintf(name, "scale-blur-%i", s);
+      snprintf(name, sizeof(name), "scale-blur-%i", s);
       dt_dump_pfm(name, buffer_out, width, height, 4 * sizeof(float), "diffuse");
     }
   }
@@ -1280,7 +1280,7 @@ static inline gboolean wavelets_process(const float *const restrict in,
     if(darktable.dump_pfm_module)
     {
       char name[64];
-      sprintf(name, "scale-up-unblur-%i", s);
+      snprintf(name, sizeof(name), "scale-up-unblur-%i", s);
       dt_dump_pfm(name, buffer_out, width, height,  4 * sizeof(float), "diffuse");
     }
     count++;

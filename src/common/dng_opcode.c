@@ -79,8 +79,29 @@ void dt_dng_opcode_process_opcode_list_2(uint8_t *buf, uint32_t buf_size, dt_ima
 
     if(opcode_id == OPCODE_ID_GAINMAP)
     {
+      // Validate param_size to avoid underflow in subtraction
+      if(param_size < 76)
+      {
+        dt_print(DT_DEBUG_IMAGEIO, "[dng_opcode] Invalid GainMap param_size: %u (minimum 76)\n", param_size);
+        return;
+      }
+
       uint32_t gain_count = (param_size - 76) / 4;
+
+      // Check for overflow in allocation size calculation
+      if(gain_count > (SIZE_MAX - sizeof(dt_dng_gain_map_t)) / sizeof(float))
+      {
+        dt_print(DT_DEBUG_IMAGEIO, "[dng_opcode] GainMap gain_count too large: %u\n", gain_count);
+        return;
+      }
+
       dt_dng_gain_map_t *gm = g_malloc(sizeof(dt_dng_gain_map_t) + gain_count * sizeof(float));
+      if(!gm)
+      {
+        dt_print(DT_DEBUG_ALWAYS, "[dng_opcode] failed to allocate GainMap structure\n");
+        return;
+      }
+
       gm->top = _get_long(&param[0]);
       gm->left = _get_long(&param[4]);
       gm->bottom = _get_long(&param[8]);

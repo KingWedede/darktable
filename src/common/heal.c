@@ -426,27 +426,60 @@ cl_int dt_heal_cl(heal_params_cl_t *p, cl_mem dev_src, cl_mem dev_dest, const fl
 
   const int ch = 4;
 
+  // Validate dimensions
+  if(width <= 0 || height <= 0)
+  {
+    dt_print(DT_DEBUG_OPENCL, "[heal] invalid dimensions: %dx%d\n", width, height);
+    err = CL_INVALID_VALUE;
+    goto cleanup;
+  }
+
+  // Check for overflow in buffer size calculation: ch * width * height * sizeof(float)
+  size_t num_elements = (size_t)ch;
+  if(num_elements > SIZE_MAX / (size_t)width)
+  {
+    dt_print(DT_DEBUG_OPENCL, "[heal] buffer size overflow (ch*width): %d*%d\n", ch, width);
+    err = CL_INVALID_BUFFER_SIZE;
+    goto cleanup;
+  }
+  num_elements *= width;
+
+  if(num_elements > SIZE_MAX / (size_t)height)
+  {
+    dt_print(DT_DEBUG_OPENCL, "[heal] buffer size overflow (num*height): %zu*%d\n", num_elements, height);
+    err = CL_INVALID_BUFFER_SIZE;
+    goto cleanup;
+  }
+  num_elements *= height;
+
+  size_t buffer_bytes = num_elements;
+  if(buffer_bytes > SIZE_MAX / sizeof(float))
+  {
+    dt_print(DT_DEBUG_OPENCL, "[heal] buffer size overflow (num*sizeof): %zu*%zu\n", num_elements, sizeof(float));
+    err = CL_INVALID_BUFFER_SIZE;
+    goto cleanup;
+  }
+  buffer_bytes *= sizeof(float);
+
   float *src_buffer = NULL;
   float *dest_buffer = NULL;
 
-  src_buffer = dt_alloc_align_float((size_t)ch * width * height);
+  src_buffer = dt_alloc_align_float(num_elements);
   if(src_buffer == NULL) goto cleanup;
 
-  dest_buffer = dt_alloc_align_float((size_t)ch * width * height);
+  dest_buffer = dt_alloc_align_float(num_elements);
   if(dest_buffer == NULL) goto cleanup;
 
-  err = dt_opencl_read_buffer_from_device(p->devid, (void *)src_buffer, dev_src, 0,
-                                          (size_t)width * height * ch * sizeof(float), CL_TRUE);
+  err = dt_opencl_read_buffer_from_device(p->devid, (void *)src_buffer, dev_src, 0, buffer_bytes, CL_TRUE);
   if(err != CL_SUCCESS) goto cleanup;
 
-  err = dt_opencl_read_buffer_from_device(p->devid, (void *)dest_buffer, dev_dest, 0,
-                                          (size_t)width * height * ch * sizeof(float), CL_TRUE);
+  err = dt_opencl_read_buffer_from_device(p->devid, (void *)dest_buffer, dev_dest, 0, buffer_bytes, CL_TRUE);
   if(err != CL_SUCCESS) goto cleanup;
 
   // I couldn't make it run fast on opencl (the reduction takes forever), so just call the cpu version
   dt_heal(src_buffer, dest_buffer, mask_buffer, width, height, ch, max_iter);
 
-  err = dt_opencl_write_buffer_to_device(p->devid, dest_buffer, dev_dest, 0, sizeof(float) * width * height * ch, CL_TRUE);
+  err = dt_opencl_write_buffer_to_device(p->devid, dest_buffer, dev_dest, 0, buffer_bytes, CL_TRUE);
 
 cleanup:
   if(src_buffer) dt_free_align(src_buffer);

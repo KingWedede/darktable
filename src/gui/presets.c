@@ -797,7 +797,9 @@ static void _presets_show_edit_dialog(dt_gui_presets_edit_dialog_t *g,
     char *iso_min_fromdb = (char *)sqlite3_column_text(stmt, 5);
     char *iso_max_fromdb = (char *)sqlite3_column_text(stmt, 6);
 
-    gtk_entry_set_text(GTK_ENTRY(g->iso_min), strtok(iso_min_fromdb,"."));
+    gchar *iso_min_token = strtok(iso_min_fromdb,".");
+    if(iso_min_token)
+      gtk_entry_set_text(GTK_ENTRY(g->iso_min), iso_min_token);
 
     // A simple way to check if FLT_MAX has been written to the database is to check if
     // there is "e+38" in the text representation of the read value.
@@ -807,7 +809,9 @@ static void _presets_show_edit_dialog(dt_gui_presets_edit_dialog_t *g,
     }
     else
     {
-      gtk_entry_set_text(GTK_ENTRY(g->iso_max), strtok(iso_max_fromdb,"."));
+      gchar *iso_max_token = strtok(iso_max_fromdb,".");
+      if(iso_max_token)
+        gtk_entry_set_text(GTK_ENTRY(g->iso_max), iso_max_token);
     }
 
     float val = sqlite3_column_double(stmt, 7);

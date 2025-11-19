@@ -464,7 +464,24 @@ gboolean dt_control_draw_endmarker(GtkWidget *widget,
   const int width = allocation.width;
   const int height = allocation.height;
   cairo_surface_t *cst = dt_cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+  if(cairo_surface_status(cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[control_draw_endmarker] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(cst)));
+    if(cst) cairo_surface_destroy(cst);
+    return TRUE;
+  }
+
   cairo_t *cr = cairo_create(cst);
+  if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[control_draw_endmarker] failed to create cairo context: %s\n",
+             cairo_status_to_string(cairo_status(cr)));
+    if(cr) cairo_destroy(cr);
+    cairo_surface_destroy(cst);
+    return TRUE;
+  }
+
   dt_draw_endmarker(cr, width, height, GPOINTER_TO_INT(user_data));
   cairo_destroy(cr);
   cairo_set_source_surface(crf, cst, 0.0, 0.0);

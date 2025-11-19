@@ -859,6 +859,11 @@ void dt_bauhaus_load_theme()
 void dt_bauhaus_init()
 {
   darktable.bauhaus = (dt_bauhaus_t *)calloc(1, sizeof(dt_bauhaus_t));
+  if(!darktable.bauhaus)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[bauhaus_init] CRITICAL: failed to allocate bauhaus core structure!\n");
+    return;
+  }
   dt_bauhaus_t *bh = darktable.bauhaus;
   dt_bauhaus_popup_t *pop = &bh->popup;
 
@@ -1677,7 +1682,14 @@ void dt_bauhaus_combobox_set_editable(GtkWidget *widget,
   dt_bauhaus_combobox_data_t *d = &w->combobox;
   d->editable = editable ? 1 : 0;
   if(d->editable && !d->text)
+  {
     d->text = calloc(1, DT_BAUHAUS_MAX_TEXT);
+    if(!d->text)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[bauhaus_combobox] failed to allocate text buffer\n");
+      d->editable = 0; // Disable editing if allocation failed
+    }
+  }
 }
 
 int dt_bauhaus_combobox_get_editable(GtkWidget *widget)
@@ -1949,6 +1961,15 @@ void dt_bauhaus_slider_set_stop(GtkWidget *widget,
   {
     d->grad_col = malloc(DT_BAUHAUS_SLIDER_MAX_STOPS * sizeof(*d->grad_col));
     d->grad_pos = malloc(DT_BAUHAUS_SLIDER_MAX_STOPS * sizeof(*d->grad_pos));
+    if(!d->grad_col || !d->grad_pos)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[bauhaus_slider_set_stop] failed to allocate gradient arrays!\n");
+      free(d->grad_col);
+      free(d->grad_pos);
+      d->grad_col = NULL;
+      d->grad_pos = NULL;
+      return;
+    }
   }
   // need to replace stop?
   for(int k = 0; k < d->grad_cnt; k++)

@@ -637,7 +637,24 @@ static void _create_lock_check_pixbuf(GdkPixbuf **lock_pixbuf,
   cairo_surface_t *lock_cst =
     cairo_image_surface_create(CAIRO_FORMAT_ARGB32, DT_PIXEL_APPLY_DPI(ICON_SIZE),
                                DT_PIXEL_APPLY_DPI(ICON_SIZE));
+  if(cairo_surface_status(lock_cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[preferences_gen_icon_pixbufs] failed to create lock icon surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(lock_cst)));
+    if(lock_cst) cairo_surface_destroy(lock_cst);
+    return;
+  }
+
   cairo_t *lock_cr = cairo_create(lock_cst);
+  if(cairo_status(lock_cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[preferences_gen_icon_pixbufs] failed to create lock icon context: %s\n",
+             cairo_status_to_string(cairo_status(lock_cr)));
+    if(lock_cr) cairo_destroy(lock_cr);
+    cairo_surface_destroy(lock_cst);
+    return;
+  }
+
   cairo_set_source_rgb(lock_cr, 0.7, 0.7, 0.7);
   dtgtk_cairo_paint_lock(lock_cr, 0, 0, DT_PIXEL_APPLY_DPI(ICON_SIZE),
                          DT_PIXEL_APPLY_DPI(ICON_SIZE), 0, NULL);
@@ -656,7 +673,24 @@ static void _create_lock_check_pixbuf(GdkPixbuf **lock_pixbuf,
   cairo_surface_t *check_cst =
     cairo_image_surface_create(CAIRO_FORMAT_ARGB32, DT_PIXEL_APPLY_DPI(ICON_SIZE),
                                DT_PIXEL_APPLY_DPI(ICON_SIZE));
+  if(cairo_surface_status(check_cst) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[preferences_gen_icon_pixbufs] failed to create check icon surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(check_cst)));
+    if(check_cst) cairo_surface_destroy(check_cst);
+    return;
+  }
+
   cairo_t *check_cr = cairo_create(check_cst);
+  if(cairo_status(check_cr) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[preferences_gen_icon_pixbufs] failed to create check icon context: %s\n",
+             cairo_status_to_string(cairo_status(check_cr)));
+    if(check_cr) cairo_destroy(check_cr);
+    cairo_surface_destroy(check_cst);
+    return;
+  }
+
   cairo_set_source_rgb(check_cr, 0.7, 0.7, 0.7);
   dtgtk_cairo_paint_check_mark(check_cr, 0, 0,
                                DT_PIXEL_APPLY_DPI(ICON_SIZE),

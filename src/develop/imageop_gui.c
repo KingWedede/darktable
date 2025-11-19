@@ -78,7 +78,7 @@ GtkWidget *dt_bauhaus_slider_from_params(dt_iop_module_t *self, const char *para
   char *base_name = g_malloc(param_length);
   if(sscanf(param, "%[^[][%zu]", base_name, &param_index) == 2)
   {
-    sprintf(param_name, "%s[0]", base_name);
+    snprintf(param_name, param_length, "%s[0]", base_name);
     skip_label = !section;
   }
   else

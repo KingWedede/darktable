@@ -261,7 +261,7 @@ static void _scale_optim()
   {
     if(_is_int(num) && num > 0.0)
     {
-      sprintf(_str, "%d", (int) num);
+      snprintf(_str, sizeof(_str), "%d", (int) num);
       g_strlcat(scale_buf, _str, sizeof(scale_buf));
     }
     else
@@ -273,7 +273,7 @@ static void _scale_optim()
   {
     if(_is_int(denum) && denum > 0.0)
     {
-      sprintf(_str, "%d", (int) denum);
+      snprintf(_str, sizeof(_str), "%d", (int) denum);
       g_strlcat(scale_buf, _str, sizeof(scale_buf));
     }
     else
@@ -286,7 +286,7 @@ static void _scale_optim()
   {
     if(_is_int(num) && num > 0.0)
     {
-      sprintf(_str, "%d", (int) num);
+      snprintf(_str, sizeof(_str), "%d", (int) num);
       g_strlcat(scale_buf, _str, sizeof(scale_buf));
     }
     else
@@ -296,7 +296,7 @@ static void _scale_optim()
     g_strlcat(scale_buf, "/", sizeof(scale_buf));
     if(_is_int(denum) && denum > 0.0)
     {
-      sprintf(_str, "%d", (int) denum);
+      snprintf(_str, sizeof(_str), "%d", (int) denum);
       g_strlcat(scale_buf, _str, sizeof(scale_buf));
     }
     else

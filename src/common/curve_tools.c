@@ -265,10 +265,24 @@ static float *spline_cubic_set_internal(int n, float t[], float y[], int ibcbeg,
       return NULL;
     }
   }
+
+  // Check for integer overflow before allocation
+  if(n > SIZE_MAX / 3)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[spline_cubic_set] n=%d too large, would overflow\n", n);
+    return NULL;
+  }
+
   float *a = calloc(3 * n, sizeof(float));
-  // nc_merror(a, "spline_cubic_set");
   float *b = calloc(n, sizeof(float));
-  // nc_merror(b, "spline_cubic_set");
+
+  if(!a || !b)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[spline_cubic_set] failed to allocate arrays\n");
+    free(a);
+    free(b);
+    return NULL;
+  }
   //
   //  Set up the first equation.
   //

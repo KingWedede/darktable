@@ -623,8 +623,39 @@ static cl_int dwt_get_image_layer_cl(cl_mem layer, dwt_params_cl_t *const p)
   cl_int err = CL_SUCCESS;
 
   if(p->image != layer)
-    err = dt_opencl_enqueue_copy_buffer_to_buffer(p->devid, layer, p->image, 0, 0,
-                                                  (size_t)p->width * p->height * p->ch * sizeof(float));
+  {
+    // Validate dimensions
+    if(p->width <= 0 || p->height <= 0 || p->ch <= 0)
+    {
+      dt_print(DT_DEBUG_OPENCL, "[dwt] invalid dimensions: %dx%dx%d\n", p->width, p->height, p->ch);
+      return CL_INVALID_VALUE;
+    }
+
+    // Check for overflow in buffer size calculation: width * height * ch * sizeof(float)
+    size_t size = (size_t)p->width;
+    if(size > SIZE_MAX / (size_t)p->height)
+    {
+      dt_print(DT_DEBUG_OPENCL, "[dwt] buffer size overflow (width*height): %dx%d\n", p->width, p->height);
+      return CL_INVALID_BUFFER_SIZE;
+    }
+    size *= p->height;
+
+    if(size > SIZE_MAX / (size_t)p->ch)
+    {
+      dt_print(DT_DEBUG_OPENCL, "[dwt] buffer size overflow (size*ch): %zu*%d\n", size, p->ch);
+      return CL_INVALID_BUFFER_SIZE;
+    }
+    size *= p->ch;
+
+    if(size > SIZE_MAX / sizeof(float))
+    {
+      dt_print(DT_DEBUG_OPENCL, "[dwt] buffer size overflow (size*sizeof(float)): %zu*%zu\n", size, sizeof(float));
+      return CL_INVALID_BUFFER_SIZE;
+    }
+    size *= sizeof(float);
+
+    err = dt_opencl_enqueue_copy_buffer_to_buffer(p->devid, layer, p->image, 0, 0, size);
+  }
 
   return err;
 }

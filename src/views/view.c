@@ -757,6 +757,18 @@ dt_view_surface_value_t dt_view_image_get_surface(const dt_imgid_t imgid,
   scale = fmaxf(img_width / (float)buf_wd, img_height / (float)buf_ht);
   *surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, img_width, img_height);
 
+  // Check for cairo surface creation failure
+  if(cairo_surface_status(*surface) != CAIRO_STATUS_SUCCESS)
+  {
+    dt_print(DT_DEBUG_ALWAYS, "[view_image_get_surface] failed to create cairo surface: %s\n",
+             cairo_status_to_string(cairo_surface_status(*surface)));
+    if(*surface)
+      cairo_surface_destroy(*surface);
+    *surface = NULL;
+    dt_mipmap_cache_release(&buf);
+    return DT_VIEW_SURFACE_KO;
+  }
+
   // we transfer cached image on a cairo_surface (with colorspace transform if needed)
   cairo_surface_t *tmp_surface = NULL;
   uint8_t *rgbbuf = calloc((size_t)buf_wd * buf_ht * 4, sizeof(uint8_t));
@@ -836,6 +848,19 @@ dt_view_surface_value_t dt_view_image_get_surface(const dt_imgid_t imgid,
   if(tmp_surface)
   {
     cairo_t *cr = cairo_create(*surface);
+    if(cairo_status(cr) != CAIRO_STATUS_SUCCESS)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[view_image_get_surface] failed to create cairo context: %s\n",
+               cairo_status_to_string(cairo_status(cr)));
+      if(cr)
+        cairo_destroy(cr);
+      cairo_surface_destroy(tmp_surface);
+      cairo_surface_destroy(*surface);
+      *surface = NULL;
+      dt_mipmap_cache_release(&buf);
+      if(rgbbuf) free(rgbbuf);
+      return DT_VIEW_SURFACE_KO;
+    }
     cairo_scale(cr, scale, scale);
 
     cairo_set_source_surface(cr, tmp_surface, 0, 0);
@@ -1666,6 +1691,21 @@ void dt_view_audio_start(dt_view_manager_t *vm,
   g_free(player);
 }
 
+/**
+ * @brief Stop audio playback and terminate player process
+ *
+ * Terminates the currently running audio player process (if any) that was
+ * started for slideshow audio playback. Handles platform-specific process
+ * termination correctly.
+ *
+ * @param vm View manager containing audio player state
+ *
+ * Platform-specific behavior:
+ * - Windows: Uses TerminateProcess() with GPid as HANDLE
+ * - Unix/Linux/macOS: Uses kill() with SIGKILL, handling process groups
+ *
+ * @note This function is safe to call multiple times or when no player is running
+ */
 void dt_view_audio_stop(dt_view_manager_t *vm)
 {
   // make sure that the process didn't finish yet and that _audio_child_watch() hasn't run
@@ -1675,7 +1715,11 @@ void dt_view_audio_stop(dt_view_manager_t *vm)
   // we don't want to trigger the callback due to a possible race condition
   g_source_remove(vm->audio.audio_player_event_source);
 #ifdef _WIN32
-// TODO: add Windows code to actually kill the process
+  if(vm->audio.audio_player_id != -1)
+  {
+    // On Windows, GPid is a HANDLE, and we use TerminateProcess to kill it
+    TerminateProcess(vm->audio.audio_player_pid, 1);
+  }
 #else  // _WIN32
   if(vm->audio.audio_player_id != -1)
   {

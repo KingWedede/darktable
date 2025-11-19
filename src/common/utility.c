@@ -175,7 +175,27 @@ gchar *dt_util_str_replace(const gchar *string,
 
   if(occurrences)
   {
-    nstring = g_malloc_n(strlen(string) + (occurrences * strlen(substitute)) + 1, sizeof(gchar));
+    // Check for overflow in buffer size calculation
+    const size_t string_len = strlen(string);
+    const size_t substitute_len = strlen(substitute);
+
+    // Check: occurrences * substitute_len
+    if(occurrences > 0 && substitute_len > SIZE_MAX / (size_t)occurrences)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[util_str_replace] size overflow in replacement calculation\n");
+      return g_strdup(string);
+    }
+    const size_t replacement_total = (size_t)occurrences * substitute_len;
+
+    // Check: string_len + replacement_total + 1
+    if(replacement_total > SIZE_MAX - string_len - 1)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "[util_str_replace] size overflow in total length calculation\n");
+      return g_strdup(string);
+    }
+    const size_t total_len = string_len + replacement_total + 1;
+
+    nstring = g_malloc_n(total_len, sizeof(gchar));
     const gchar *pend = string + strlen(string);
     const gchar *s = string, *p = string;
     gchar *np = nstring;
@@ -509,9 +529,34 @@ static cairo_surface_t *_util_get_svg_img(gchar *logo,
 
     const float svg_size = MAX(dimension.width, dimension.height);
     const float factor = size > 0.0 ? size / svg_size : -1.0 * size;
-    const float final_width = dimension.width * factor * ppd,
-                final_height = dimension.height * factor * ppd;
+
+    // Calculate scaled dimensions as floats, then convert to integers
+    const float final_width_f = dimension.width * factor * ppd;
+    const float final_height_f = dimension.height * factor * ppd;
+    const int final_width = (int)final_width_f;
+    const int final_height = (int)final_height_f;
+
+    // Validate converted dimensions
+    if(final_width <= 0 || final_height <= 0)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "warning: invalid SVG dimensions after scaling: %dx%d\n", final_width, final_height);
+      g_free(logo);
+      g_free(dtlogo);
+      g_object_unref(svg);
+      return NULL;
+    }
+
     const int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, final_width);
+
+    // Check for overflow in buffer allocation: stride * final_height
+    if(stride > 0 && final_height > INT_MAX / stride)
+    {
+      dt_print(DT_DEBUG_ALWAYS, "warning: SVG buffer size overflow: %d*%d\n", stride, final_height);
+      g_free(logo);
+      g_free(dtlogo);
+      g_object_unref(svg);
+      return NULL;
+    }
 
     guint8 *image_buffer = calloc(stride * final_height, sizeof(guint8));
     if(!image_buffer)
